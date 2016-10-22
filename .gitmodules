@@ -1,0 +1,3 @@
+[submodule "plugins/connection/ansible-lxc-ssh"]
+	path = plugins/connection/ansible-lxc-ssh
+	url = https://github.com/chifflier/ansible-lxc-ssh

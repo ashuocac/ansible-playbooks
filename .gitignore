@@ -1,0 +1,5 @@
+*.swp
+vagrant/
+inventory
+*.retry
+*.pyc

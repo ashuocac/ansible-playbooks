@@ -1,0 +1,11 @@
+---
+
+# In order for Ansible to use Fedora >= 23, the python2-dnf package needs to
+# be installed before any other task with the raw: module.
+- name: Bootstrap DNF on Fedora >= 23
+  raw: dnf install -y python2-dnf
+  become: yes
+  when:
+    - ansible_distribution == "Fedora"
+    - ansible_pkg_mgr == "dnf"
+    - ansible_distribution_major_version|int >= 23

@@ -1,0 +1,31 @@
+---
+
+- name: Reboot the system [not systemd]
+  shell: sleep 2 && shutdown -r now "{{ ansible_reboot_msg }}"
+  ignore_errors: yes
+  poll: 0
+  async: 1
+  when: ansible_service_mgr != "systemd"
+
+- name: Reboot the system [systemd]
+  shell: sleep 2 && systemctl reboot
+  ignore_errors: yes
+  poll: 0
+  async: 1
+  when: ansible_service_mgr == "systemd"
+
+- name: Wait for systems to return
+  wait_for:
+    host: "{{ ansible_host }}"
+    delay: 5
+    search_regex: OpenSSH
+    port: 22
+    timeout: 500
+  delegate_to: localhost
+  become: no
+  when:
+    not (hostvars[inventory_hostname]['ansible_connection']
+      | default(None) == "lxc_ssh")
+
+- name: Ping all hosts (one last time to check for connectivity)
+  ping:

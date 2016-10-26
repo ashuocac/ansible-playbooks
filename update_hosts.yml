@@ -1,0 +1,118 @@
+---
+
+- hosts: all
+  become: yes
+
+  vars:
+
+    critical_service_list:
+      ('systemd' in service_check.stdout)
+        or ('sshd' in service_check.stdout)
+        or ('1 :' in service_check.stdout)
+    reboot_handlers:
+      - Reboot the system
+    ansible_reboot_msg: Rebooting on condition of Ansible playbook
+
+  handlers:
+
+    - name: Reboot the system
+      include: includes/reboot_hosts.yml
+
+  tasks:
+
+    - name: Bootstrap Fedora >=23
+      include: includes/bootstrap_fedora.yml
+
+    - name: Update all packages on non-apt based systems
+      package:
+        name: "*"
+        state: latest
+      when: ansible_pkg_mgr != 'apt'
+      register: result
+      until: result | succeeded
+      retries: 3
+
+    - name: Update all packages on apt-based systems
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+        autoremove: yes
+        upgrade: dist
+      when: ansible_pkg_mgr == 'apt'
+
+    # Begin Block
+    - block:
+
+        - name: Install debian-goodies if necessary [Debian]
+          package:
+            name: debian-goodies
+            state: present
+
+        - name: Check if services are updated [Debian]
+          command: checkrestart
+          register: service_check
+          changed_when: "{{ critical_service_list }}"
+          notify: "{{ reboot_handlers }}"
+
+      when: ansible_os_family == 'Debian'
+      # End Block
+
+    # Begin Block
+    - block:
+
+        - name: Install yum-utils if necessary [CentOS]
+          package:
+            name: yum-utils
+            state: present
+
+        - name: Check if services are updated [CentOS]
+          command: needs-restarting
+          register: service_check
+          changed_when: "{{ critical_service_list }}"
+          notify: "{{ reboot_handlers }}"
+
+      when: ansible_pkg_mgr == "yum"
+      # End block
+
+    - name: Check if services are updated [Fedora]
+      command: dnf needs-restarting
+      args:
+        warn: no
+      when: ansible_pkg_mgr == "dnf"
+      register: service_check
+      changed_when: "{{ critical_service_list }}"
+      notify: "{{ reboot_handlers }}"
+
+    # Begin block
+    - block:
+
+        - name: Check if kernel needs reboot to upgrade [RPM-based]
+          shell: |
+            [ "$(rpm -q --last kernel \
+              | sed -r '1!d;s|kernel-(.*\.[a-zA-Z0-9_]+) .*|\1|')" \
+              != "$(uname -r)" ]
+          failed_when: false
+          register: kernel_check
+          changed_when: kernel_check.rc == 0
+          when: ansible_os_family == "RedHat"
+          notify: "{{ reboot_handlers }}"
+
+        - name: Check if kernel needs reboot to upgrade [Debian]
+          shell: |
+            [ "$(dpkg -l 'linux-image-*' \
+              | awk 'NR>=6 && NR<7{ gsub("^linux-image-","",$2); print $2 }')" \
+              != "$(uname -r)" ]
+          failed_when: false
+          register: kernel_check
+          changed_when: kernel_check.rc == 0
+          when: ansible_os_family == "Debian"
+          notify: "{{ reboot_handlers }}"
+
+      when:
+        - (ansible_virtualization_type != 'lxc')
+          or (ansible_virtualization_type is undefined)
+        - (ansible_env.container is undefined)
+      # End Block
+
+    - meta: flush_handlers
+

@@ -1,0 +1,45 @@
+---
+
+- hosts: libvirt_kvm
+  become: yes
+  tasks:
+
+    - name: Ensure sudo is installed
+      package:
+        name: sudo
+        state: present
+
+    - name: Add ansible user
+      user:
+        name: "{{ new_ansible_user }}"
+        createhome: yes
+        state: present
+
+    - name: Give NOPASSWD sudo permissions
+      copy:
+        dest: /etc/sudoers.d/{{ new_ansible_user }}
+        validate: visudo -cf %s
+        content: |
+          {{ new_ansible_user }} ALL=(ALL) NOPASSWD: ALL
+
+    - name: Set authorized_keys for new_ssh_user based on current SSH Agent list
+      authorized_key:
+        user: "{{ new_ansible_user }}"
+        key: "{{ lookup('pipe', 'ssh-add -L') }}"
+
+
+- hosts: libvirt_kvm
+
+  # Override {{ ansible_user }} instead of using
+  # remote_user: because inventory vars override remote_user
+  vars:
+    ansible_user: "{{ new_ansible_user }}"
+
+  tasks:
+
+    - name: Test for sudo
+      become: yes
+      command: whoami
+      register: result
+      failed_when: result.stdout != "root"
+      changed_when: false

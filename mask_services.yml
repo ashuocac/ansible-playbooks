@@ -1,0 +1,29 @@
+---
+
+- hosts: all
+  become: yes
+
+  vars:
+    service_name_list:
+      - wpa_supplicant
+      - gssproxy
+
+  tasks:
+
+    - name: Stop and disable the service
+      service:
+        name: "{{ item }}"
+        state: stopped
+        enabled: no
+      ignore_errors: true
+      register: stop_disable_result
+      with_items: "{{ service_name_list }}"
+
+    - name: Mask the service for systemd systems
+      command: systemctl mask {{ item }}.service
+      register: result
+      changed_when: "'Created symlink' in result.stderr"
+      with_items: "{{ service_name_list }}"
+      when:
+        - ansible_service_mgr == "systemd"
+        - stop_disable_result | succeeded

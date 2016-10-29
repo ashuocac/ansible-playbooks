@@ -1,0 +1,17 @@
+---
+
+# update_hosts.yml
+
+critical_service_list:
+  ('systemd' in service_check.stdout)
+    or ('sshd' in service_check.stdout)
+    or ('1 :' in service_check.stdout)
+reboot_handlers:
+  - Reboot the system
+ansible_reboot_msg: Rebooting on condition of Ansible playbook
+
+# mask_services.yml
+
+service_name_list:
+  - wpa_supplicant
+  - gssproxy

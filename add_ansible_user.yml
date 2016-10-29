@@ -1,6 +1,6 @@
 ---
 
-- hosts: libvirt_kvm
+- hosts: libvirt_kvm,metal
   become: yes
   tasks:
 

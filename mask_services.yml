@@ -3,11 +3,6 @@
 - hosts: all
   become: yes
 
-  vars:
-    service_name_list:
-      - wpa_supplicant
-      - gssproxy
-
   tasks:
 
     - name: Stop and disable the service

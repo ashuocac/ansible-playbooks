@@ -1,0 +1,6 @@
+---
+
+service_name_list_lxc:
+  - sshd
+
+service_name_list: "{{ service_name_list_defaults | union(service_name_list_lxc) }}"

@@ -25,6 +25,7 @@ sshd_config_dict:
 
 # mask_services.yml
 
-service_name_list:
+service_name_list: "{{ service_name_list_defaults }}"
+service_name_list_defaults:
   - wpa_supplicant
   - gssproxy

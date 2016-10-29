@@ -1,0 +1,35 @@
+
+- hosts: all
+  become: yes
+
+  handlers:
+
+    - name: Restart SSHD
+      service:
+        name: sshd
+        state: restarted
+
+  tasks:
+
+    - name: Comment out all existing options that match
+      replace:
+        dest: "{{ sshd_config_path }}"
+        regexp: "^(?!#)({{ item.key }}.*)"
+        replace: '#\1'
+      with_dict: "{{ sshd_config_dict }}"
+      changed_when: false
+
+    - name: Ensure sshd_config options are uncommented and set
+      lineinfile:
+        dest: "{{ sshd_config_path }}"
+        backup: no
+        state: present
+        regexp: "^#?{{ item.key }}.*"
+        line: "{{ item.key }} {{ item.value }}"
+      with_dict: "{{ sshd_config_dict }}"
+      changed_when: false
+      notify:
+        - Restart SSHD
+
+    - name: Check for SSH connectivity
+      ping:

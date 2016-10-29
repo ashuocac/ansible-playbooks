@@ -10,6 +10,19 @@ reboot_handlers:
   - Reboot the system
 ansible_reboot_msg: Rebooting on condition of Ansible playbook
 
+# sshd_setup.yml
+
+sshd_config_path: /etc/ssh/sshd_config
+sshd_config_dict:
+  PermitRootLogin: "no"
+  PubkeyAuthentication: "yes"
+  PasswordAuthentication: "no"
+  HostbasedAuthentication: "no"
+  ChallengeResponseAuthentication: "no"
+  GSSAPIAuthentication: "no"
+  UsePAM: "yes"
+  X11Forwarding: "no"
+
 # mask_services.yml
 
 service_name_list:

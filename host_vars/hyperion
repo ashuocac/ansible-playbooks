@@ -1,0 +1,11 @@
+---
+
+sshd_config_dict:
+  PermitRootLogin: "without-password"
+  PubkeyAuthentication: "yes"
+  PasswordAuthentication: "yes"
+  HostbasedAuthentication: "no"
+  ChallengeResponseAuthentication: "no"
+  GSSAPIAuthentication: "no"
+  UsePAM: "yes"
+  X11Forwarding: "no"

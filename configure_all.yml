@@ -1,0 +1,5 @@
+---
+- include: add_ansible_user.yml
+- include: mask_services.yml
+- include: sshd_setup.yml
+- include: update_hosts.yml

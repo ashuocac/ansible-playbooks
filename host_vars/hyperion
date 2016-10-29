@@ -1,11 +1,9 @@
 ---
 
-sshd_config_dict:
+sshd_config_dict_hyperion:
   PermitRootLogin: "without-password"
-  PubkeyAuthentication: "yes"
-  PasswordAuthentication: "yes"
-  HostbasedAuthentication: "no"
-  ChallengeResponseAuthentication: "no"
-  GSSAPIAuthentication: "no"
-  UsePAM: "yes"
-  X11Forwarding: "no"
+
+sshd_config_dict: "{{
+                      sshd_config_dict_defaults
+                        | combine(sshd_config_dict_hyperion)
+                   }}"

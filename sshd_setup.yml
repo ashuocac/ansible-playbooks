@@ -17,6 +17,24 @@
         regexp: "^(?!#)({{ item.key }}.*)"
         replace: '#\1'
       with_dict: "{{ sshd_config_dict }}"
+      # "Changed when more than one line commented out" because .msg is usually
+      # "N replacements made", where .msg.split().0 == N
+      changed_when:
+        ( comment_replace_result.msg.split().0 | default(0) | int ) > 1
+      register: comment_replace_result
+
+    # This undoes what the last task does, but just for the last line found.
+    # If previously configured, the result from this task should be equivalent
+    # To the following task, thereby re-gaining idempotency.
+    - name: Uncomment last matching line for next task's correct idempotency
+      lineinfile:
+        dest: "{{ sshd_config_path }}"
+        backup: no
+        state: present
+        regexp: "^#({{ item.key }}.*)"
+        line: '\1'
+        backrefs: yes
+      with_dict: "{{ sshd_config_dict }}"
       changed_when: false
 
     - name: Ensure sshd_config options are uncommented and set
@@ -27,9 +45,7 @@
         regexp: "^#?{{ item.key }}.*"
         line: "{{ item.key }} {{ item.value }}"
       with_dict: "{{ sshd_config_dict }}"
-      changed_when: false
-      notify:
-        - Restart SSHD
+      notify: Restart SSHD
 
     - name: Check for SSH connectivity
       ping:
